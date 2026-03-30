@@ -1,0 +1,32 @@
+name: Push to Tidbyt
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Pixlet
+        run: |
+          curl -LO https://github.com/tidbyt/pixlet/releases/download/v0.34.0/pixlet_0.34.0_linux_amd64.tar.gz
+          tar -xzf pixlet_0.34.0_linux_amd64.tar.gz
+          sudo mv pixlet /usr/local/bin/
+          pixlet version
+
+      - name: Render
+        run: pixlet render mets_mlb.star -o mets_mlb.webp
+
+      - name: Push to Tidbyt
+        run: |
+          pixlet push \
+            --installation-id metslive \
+            --background \
+            --api-token ${{ secrets.TIDBYT_API_TOKEN }} \
+            ${{ secrets.TIDBYT_DEVICE_ID }} \
+            mets_mlb.webp
